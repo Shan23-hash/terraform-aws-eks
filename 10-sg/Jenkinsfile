@@ -5,7 +5,7 @@ pipeline {
     environment { 
         appVersion = ''
         REGION = "us-east-1"
-        ACC_ID = "315069654700"
+        ACC_ID = "413335224836"
         PROJECT = "roboshop"
     }
     options {
@@ -48,6 +48,11 @@ pipeline {
             }
         }
         stage('apply') {
+            input {
+                message "should we contine?"
+                ok "Yes, We should"
+                submitter "alice.bob"
+            }
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: 'us-east-1') {
@@ -59,7 +64,9 @@ pipeline {
                 }
             }
         }
-        stage('Bastion EKS ACM ALB') {
+
+    }    
+        /* stage('Bastion EKS ACM ALB') {
             parallel {
                 stage('Trigger Bastion') {
                     steps {
@@ -99,9 +106,7 @@ pipeline {
                 }
             }
         }
-
-        
-    }
+ */
 
     post { 
         always { 
