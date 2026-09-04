@@ -7,9 +7,9 @@ variable "environment" {
 }
 
 variable "zone_id" {
-    default = "Z02630113DMTI95DLX7GD"
+    default = "Z08868581OGQ5IOUCAXOU"
 }
 
 variable "zone_name" {
-    default = "daws-shankran.site"
+    default = ""
 }
