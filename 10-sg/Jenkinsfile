@@ -1,31 +1,26 @@
 pipeline {
-    agent {
+    agent  {
         label 'AGENT-1'
     }
-
-    environment {
+    environment { 
         appVersion = ''
         REGION = "us-east-1"
         ACC_ID = "565257597039"
         PROJECT = "roboshop"
     }
-
     options {
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 30, unit: 'MINUTES') 
         disableConcurrentBuilds()
         ansiColor('xterm')
     }
-
-    /*
-    parameters {
+    /* parameters {
         string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
         text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
         booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
         choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
-        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
-    }
-    */
-
+        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password') 
+    } */
+    // Build
     stages {
         stage('init') {
             steps {
@@ -35,10 +30,11 @@ pipeline {
                             cd 10-sg
                             terraform init -reconfigure
                         """
-                    }    
+                    }
                 }
             }
         }
+
         stage('plan') {
             steps {
                 script {
@@ -52,11 +48,6 @@ pipeline {
             }
         }
         stage('apply') {
-            input {
-                message "Should we continue?"
-                ok "Yes, we should."
-                submitter "alice,bob"
-            }
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: 'us-east-1') {
@@ -68,19 +59,60 @@ pipeline {
                 }
             }
         }
+        stage('Bastion EKS ACM ALB') {
+            parallel {
+                stage('Trigger Bastion') {
+                    steps {
+                        script {
+                            build job: '20-bastion', 
+                            propagate: false,  // even SG fails VPC will not be effected
+                            wait: false // VPC will not wait for SG pipeline completion
+                        }
+                    }
+                }
+                stage('Trigger EKS') {
+                    steps {
+                        script {
+                            build job: '80-eks', 
+                            propagate: false,  // even SG fails VPC will not be effected
+                            wait: false // VPC will not wait for SG pipeline completion
+                        }
+                    }
+                }
+                stage('ACM') {
+                    steps {
+                        script {
+                            build job: '60-acm', 
+                            propagate: false,  // even SG fails VPC will not be effected
+                            wait: false // VPC will not wait for SG pipeline completion
+                        }
+                    }  
+                }
+            }
+        }
+        stage('Trigger ALB') {
+            steps {
+                script {
+                    build job: '70-frontend-alb', 
+                    propagate: false,  // even SG fails VPC will not be effected
+                    wait: false // VPC will not wait for SG pipeline completion
+                }
+            }
+        }
+
+        
     }
-    post {
-        always {
+
+    post { 
+        always { 
             echo 'I will always say Hello again!'
             deleteDir()
         }
-
-        success {
+        success { 
             echo 'Hello Success'
         }
-
-        failure {
-            echo 'Hello Failure' 
+        failure { 
+            echo 'Hello Failure'
         }
     }
 }
