@@ -1,25 +1,30 @@
 pipeline {
-    agent  {
+    agent {
         label 'AGENT-1'
     }
-    environment { 
+
+    environment {
         appVersion = ''
         REGION = "us-east-1"
-        ACC_ID = "413335224836"
+        ACC_ID = "565257597039"
         PROJECT = "roboshop"
     }
+
     options {
-        timeout(time: 30, unit: 'MINUTES') 
+        timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    /* parameters {
+
+    /*
+    parameters {
         string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
         text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
         booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
         choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
-        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password') 
-    } */
-    // Build
+        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
+    }
+    */
+
     stages {
         stage('init') {
             steps {
@@ -29,63 +34,23 @@ pipeline {
                             cd 00-vpc
                             terraform init -reconfigure
                         """
-                    }
+                    }    
                 }
             }
         }
-
-        stage('plan') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-                        sh """
-                            cd 00-vpc
-                            terraform plan
-                        """
-                    }
-                }
-            }
-        }
-        stage('apply') {
-            input {
-                message "Should we continue?"
-                ok "Yes, we should."
-                submitter "alice,bob"
-            }
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-                        sh """
-                            cd 00-vpc
-                            terraform apply -auto-approve
-                        """
-                    }
-                }
-            }
-        }
-        // Down stream job
-        stage('Trigger SG') {
-            steps {
-                script {
-                    build job: '10-sg', 
-                      propagate: false,  // even SG fails VPC will not be effected
-                      wait: false // VPC will not wait for SG pipeline completion
-                }
-            }
-        }
-        
     }
-
-    post { 
-        always { 
+    post {
+        always {
             echo 'I will always say Hello again!'
             deleteDir()
         }
-        success { 
+
+        success {
             echo 'Hello Success'
         }
-        failure { 
-            echo 'Hello Failure'
+
+        failure {
+            echo 'Hello Failure' 
         }
     }
 }
